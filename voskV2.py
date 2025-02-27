@@ -28,7 +28,6 @@ def callback(indata, frames, time, status):
         print(status, flush=True)
     audioData = np.frombuffer(indata, dtype=np.int16)
     filterdData = highpassFilter(indata, dtype=np.int16)
-    audio_queue.put(filterdData.astype(np.int16).tobytes())# bytes(indata))
 
 # Start audiostream
 with sd.RawInputStream(samplerate=16000, blocksize=32000, dtype='int16',
