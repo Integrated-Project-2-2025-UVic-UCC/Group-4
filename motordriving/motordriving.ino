@@ -1,3 +1,8 @@
+#include <SoftwareSerial.h>
+
+
+SoftwareSerial BTSerial(0,1); // RX | TX // or (10,11)
+String  receivedText = "";
 
 
 /* -----------------------------------------------------|
@@ -114,7 +119,8 @@ double Sonic_Sensor() {
   return distance_cm;
 }
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(9600); //for serial monitor
+  BTSerial.begin(9600); //hc-05 default baud rate
 
   pinMode(trigPin, OUTPUT); // Sets the trigPin as an OUTPUT
   pinMode(echoPin, INPUT); // Sets the echoPin as an INPUT 
@@ -126,6 +132,36 @@ void setup() {
   
 void loop() {
 
+  while(BTSerial.available()){
+    char character = BTSerial.read();
+    if(character == '\n'){
+      Serial.print("received: ");
+      Serial.println(receivedText);
+
+      if (receivedText=="start"){
+        
+      }
+      if (receivedText=="left"){
+        left();
+      }
+      if (receivedText=="right"){
+        right();
+      }
+      if (receivedText=="forward"){
+        forward();
+      }
+      if (receivedText=="backwards"){
+        reverse();
+      }
+      if (receivedText=="look"){
+        
+      }
+    }
+    else{
+      receivedText += character;
+    }
+    
+  }
 
 
 

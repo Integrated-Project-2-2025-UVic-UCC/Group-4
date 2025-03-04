@@ -2,10 +2,16 @@ import json
 import queue
 import sounddevice as sd
 from vosk import Model, KaldiRecognizer
-import vosk
+#import vosk
 from scipy.signal import butter, lfilter
 import numpy as np
+import serial
+import time
 
+#change 'COM5' to your HC-05 port(e.g., '/dev/rfcomm0' linux maxos)
+#device manager -> ports(com&LPT) -> look for the port
+btSerial = serial.Serial('COM5')
+time.sleep(2)
 # Pad naar het gedownloade model (pas dit aan naar jouw locatie)
 MODEL_PATH = "languages\\vosk-model-small-en-us-0.15"
 
@@ -29,6 +35,10 @@ def callback(indata, frames, time, status):
     audioData = np.frombuffer(indata, dtype=np.int16)
     filterdData = highpassFilter(indata, dtype=np.int16)
 
+def sendMessageToArduino(command):
+    btSerial.write(command.encode())
+    print("sent: ", command)
+
 # Start audiostream
 with sd.RawInputStream(samplerate=16000, blocksize=32000, dtype='int16',
                        channels=1, callback=callback):
@@ -50,6 +60,7 @@ with sd.RawInputStream(samplerate=16000, blocksize=32000, dtype='int16',
         # Controleer op specifieke commando's
         if "start" in text:
             print("Commando: START gedetecteerd!")
+
             #function()moveRobot
         if "stop" in text:
             print("Commando: STOP gedetecteerd! Programma beëindigen...")
