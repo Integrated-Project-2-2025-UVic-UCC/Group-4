@@ -7,7 +7,7 @@ from scipy.signal import butter, lfilter
 import numpy as np
 
 # Pad naar het gedownloade model (pas dit aan naar jouw locatie)
-MODEL_PATH = "talen\\vosk-model-small-en-us-0.15"
+MODEL_PATH = "languages\\vosk-model-small-en-us-0.15"
 
 # Laad het Vosk-model
 model = Model(MODEL_PATH)
