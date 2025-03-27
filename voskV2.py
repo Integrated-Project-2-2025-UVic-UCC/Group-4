@@ -60,23 +60,29 @@ with sd.RawInputStream(samplerate=16000, blocksize=32000, dtype='int16',
         # Controleer op specifieke commando's
         if "start" in text:
             print("Commando: START gedetecteerd!")
+            sendMessageToArduino("start")
 
             #function()moveRobot
         if "stop" in text:
             print("Commando: STOP gedetecteerd! Programma beëindigen...")
+            sendMessageToArduino("stop")
             #function()moveRobot
             break
         if "left" in text:
             print("Commando: LINKS gedetecteerd!")
+            sendMessageToArduino("left")
             #function()moveRobot
         if "right" in text:
             print("Commando: RECHTS gedetecteerd!")
+            sendMessageToArduino("right")
             #function()moveRobot
         if "forward" in text:
-            print("Commando: RECHTS gedetecteerd!")
+            print("Commando: FORWARD gedetecteerd!")
+            sendMessageToArduino("forward")
             #function()moveRobot
         if "look" in text:
-            print("Commando: RECHTS gedetecteerd!")
+            print("Commando: LOOK gedetecteerd!")
+            sendMessageToArduino("look")
             #function()moveRobot
         #while not audio_queue.empty():
         #    audio_queue.get()

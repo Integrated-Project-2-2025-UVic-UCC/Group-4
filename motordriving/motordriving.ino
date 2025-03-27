@@ -36,11 +36,13 @@ int pinSpeedRight = 3;
 #define pinCurrentSenseRight = A0
 int leftMotorArray[3] = {pinMotorLeft, pinBrakeLeft, pinSpeedLeft};
 int rightMotorArray[3] = {pinMotorRight, pinBrakeRight, pinSpeedRight};
-int speedMotor = 60;
+int speedMotor = 200;
 
 //Ultrasonic sensor
 #define echoPin 37 // attach pin D12 Arduino to pin Echo of HC-SR04
 #define trigPin 36 //attach pin D13 Arduino to pin Trig of HC-SR04
+
+
 void reverse() {
   digitalWrite(leftMotorArray[0], LOW); //Establishes forward direction of Channel A
   digitalWrite(leftMotorArray[1], LOW);   //Disengage the Brake for Channel A
@@ -128,6 +130,10 @@ void setup() {
     pinMode(leftMotorArray[i], OUTPUT);
     pinMode(rightMotorArray[i], OUTPUT);
   }
+  forward();
+  delay(1000);
+  still();
+  Serial.println("vfev");
 }
   
 void loop() {
@@ -143,6 +149,7 @@ void loop() {
       }
       if (receivedText=="left"){
         left();
+        
       }
       if (receivedText=="right"){
         right();
@@ -156,20 +163,15 @@ void loop() {
       if (receivedText=="look"){
         
       }
+      if (receivedText=="stop"){
+        still();
+        break;
+      }
     }
     else{
       receivedText += character;
     }
     
   }
-
-
-
-
-
-
-
-
-
 
 }

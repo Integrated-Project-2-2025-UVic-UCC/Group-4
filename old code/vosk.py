@@ -16,7 +16,7 @@ with wave.open(audioPath,"rb") as wf:
         print("fout: bestand moet mono, 16-bit PCM, 16kHz zijn ")
         sys.exit(1)
 
-    print("verwerken van ", audioPath)
+    print("processing ", audioPath)
 
     while True:
         data = wf.readframes(4000)
