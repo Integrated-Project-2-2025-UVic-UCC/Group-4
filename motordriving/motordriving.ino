@@ -1,7 +1,7 @@
 #include <SoftwareSerial.h>
 
 
-SoftwareSerial BTSerial(0,1); // RX | TX // or (10,11)
+SoftwareSerial BTSerial(2,3); // RX | TX // or (10,11)
 String  receivedText = "";
 
 
@@ -123,7 +123,7 @@ double Sonic_Sensor() {
 void setup() {
   Serial.begin(9600); //for serial monitor
   BTSerial.begin(9600); //hc-05 default baud rate
-
+  pinMode(7, OUTPUT);
   pinMode(trigPin, OUTPUT); // Sets the trigPin as an OUTPUT
   pinMode(echoPin, INPUT); // Sets the echoPin as an INPUT 
   for(int i = 0; i < 3; i++) {
@@ -138,40 +138,51 @@ void setup() {
   
 void loop() {
 
-  while(BTSerial.available()){
+  if(BTSerial.available()){
+    
     char character = BTSerial.read();
+  
+    
     if(character == '\n'){
+      receivedText.trim();
       Serial.print("received: ");
       Serial.println(receivedText);
-
       if (receivedText=="start"){
         
       }
       if (receivedText=="left"){
         left();
+        digitalWrite(7,HIGH);
         
       }
       if (receivedText=="right"){
         right();
+        digitalWrite(7,HIGH);
       }
       if (receivedText=="forward"){
         forward();
+        digitalWrite(7,HIGH);
       }
       if (receivedText=="backwards"){
         reverse();
+        digitalWrite(7,HIGH);
       }
       if (receivedText=="look"){
+        digitalWrite(7,HIGH);
         
       }
       if (receivedText=="stop"){
         still();
-        break;
+        
       }
+      receivedText = "";
     }
     else{
       receivedText += character;
+      
     }
     
   }
+ 
 
 }
