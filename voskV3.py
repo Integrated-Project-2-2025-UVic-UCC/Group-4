@@ -55,14 +55,14 @@ def callback(indata, frames, time, status):
 def sendMessageToArduino(command):
     btSerial.write((command+ "\n").encode())
     print("sent: ", command)
-    text = ""
+    
 
 # === Start Script ===
 noise_fft_profile = record_noise_profile()
 
 recognizer = KaldiRecognizer(model, 16000)
 recognizer.SetWords(False)  # Voorkomt volledige transcripties
-recognizer.SetGrammar('["left", "right", "start", "stop", "forward", "fork", "[unk]"]')
+recognizer.SetGrammar('["left", "right", "start", "stop", "forward", "fork", "reverse", "[unk]"]')
 lastWord = ""
 # Start audiostream
 with sd.RawInputStream(samplerate=16000, blocksize=32000, dtype='int16',
@@ -85,6 +85,13 @@ with sd.RawInputStream(samplerate=16000, blocksize=32000, dtype='int16',
 
             if words:
              text = words[-1]
+            #check if previous command was the same one if this one has already been send. 
+            #if the command has already been used one then skip it unless the previous command was the same.
+            #with an itteration that does +=1, check for the amount of times the command has been said and then check if that there is a new command
+            # i+=1 if new command or reset to 1;
+            #then check i amount of words from the back;
+            #if the same then do another of that command;
+            #if not the same then it is still at the same command;
             else:
                 text = ""
 
@@ -116,6 +123,10 @@ with sd.RawInputStream(samplerate=16000, blocksize=32000, dtype='int16',
             print("Commando: FORWARD gedetecteerd!")
             sendMessageToArduino("forward")
             print("Commando: FORWARD gedetecteerd!")
+        if "reverse"  in text:
+            print("Commando: reverse gedetecteerd!")
+            sendMessageToArduino("reverse")
+            print("Commando: reverse gedetecteerd!")
             #function()moveRobot
 
             #function()moveRobot

@@ -7,7 +7,7 @@
 // Define step constant
 #define MotorInterfaceType 4
 
-SoftwareSerial BTSerial(2,3); // RX | TX // or (10,11)
+SoftwareSerial BTSerial(2,10); // RX | TX // or (10,11)
 String  receivedText = "";
 
 
@@ -47,7 +47,7 @@ int pinSpeedRight = 3;
 
 int leftMotorArray[3] = {pinMotorLeft, pinBrakeLeft, pinSpeedLeft};
 int rightMotorArray[3] = {pinMotorRight, pinBrakeRight, pinSpeedRight};
-int speedMotor = 200;
+int speedMotor = 125;
 
 // Creates an instance
 // Pins entered in sequence IN1-IN3-IN2-IN4 for proper step sequence
@@ -65,7 +65,7 @@ void reverse() {
   analogWrite(leftMotorArray[2], speedMotor);   //Spins the motor on Channel A at full speed
 
   //Motor B backward @ half speed
-  digitalWrite(rightMotorArray[0], HIGH);  //Establishes forward direction of Channel B
+  digitalWrite(rightMotorArray[0], LOW);  //Establishes forward direction of Channel B
   digitalWrite(rightMotorArray[1], LOW);   //Disengage the Brake for Channel B
   analogWrite(rightMotorArray[2], speedMotor);    //Spins the motor on Channel B at half speed
 }
@@ -95,23 +95,23 @@ void still() {
 
 void right() {
   
-  digitalWrite(leftMotorArray[0], LOW); //Establishes forward direction of Channel A
+  digitalWrite(leftMotorArray[0], HIGH); //Establishes forward direction of Channel A
   digitalWrite(leftMotorArray[1], LOW);   //Disengage the Brake for Channel A
   analogWrite(leftMotorArray[2], 150);   //Spins the motor on Channel A at full speed
 
   //Motor B backward @ half speed
-  digitalWrite(rightMotorArray[0], HIGH);  //Establishes backward direction of Channel B
+  digitalWrite(rightMotorArray[0], LOW);  //Establishes backward direction of Channel B
   digitalWrite(rightMotorArray[1], LOW);   //Disengage the Brake for Channel B
   analogWrite(rightMotorArray[2], 130);    //Spins the motor on Channel B at half speed
 }
 
-void right() {
-  digitalWrite(leftMotorArray[0], HIGH); //Establishes forward direction of Channel A
+void left() {
+  digitalWrite(leftMotorArray[0], LOW); //Establishes forward direction of Channel A
   digitalWrite(leftMotorArray[1], LOW);   //Disengage the Brake for Channel A
   analogWrite(leftMotorArray[2], 120);//speedMotorTurn+40);   //Spins the motor on Channel A at full speed
 
   //Motor B backward @ half speed
-  digitalWrite(rightMotorArray[0], LOW);  //Establishes backward direction of Channel B
+  digitalWrite(rightMotorArray[0], HIGH);  //Establishes backward direction of Channel B
   digitalWrite(rightMotorArray[1], LOW);   //Disengage the Brake for Channel B
   analogWrite(rightMotorArray[2], 190);//speedMotorTurn+50);    //Spins the motor on Channel B at half speed
 }
@@ -139,7 +139,7 @@ double Sonic_Sensor() {
 void setup() {
   Serial.begin(9600); //for serial monitor
   BTSerial.begin(9600); //hc-05 default baud rate
-  pinMode(10, OUTPUT);
+
   pinMode(trigPin, OUTPUT); // Sets the trigPin as an OUTPUT
   pinMode(echoPin, INPUT); // Sets the echoPin as an INPUT 
   
@@ -156,6 +156,7 @@ void setup() {
 	myStepper.setAcceleration(50.0);
 	myStepper.setSpeed(200);
 	myStepper.moveTo(2038);
+  
 
   Serial.println("vfev");
 }
@@ -166,48 +167,59 @@ void loop() {
     
     char character = BTSerial.read();
   
-    
-    if(character == '\n'){
+    Serial.print("Final string: >");
+    Serial.print(receivedText);
+    Serial.println("<");
+    if(character == '\n' || character == '\r'){
       receivedText.trim();
       Serial.print("Final string: >");
       Serial.print(receivedText);
       Serial.println("<");
       if (receivedText=="stop"){
         still();
+      }
       if (receivedText=="start"){
         
       }
       if (receivedText=="left"){
         left();
-        digitalWrite(10,HIGH);
+        Serial.println("left");
+        delay(1000);
+        still();
         
       }
       if (receivedText=="right"){
         right();
-        digitalWrite(10,HIGH);
+        Serial.println("left");
+        delay(1000);
+        still();
       }
       if (receivedText=="forward"){
         forward();
-        digitalWrite(10,HIGH);
+        Serial.println("left");
+        delay(1000);
+        still();
       }
-      if (receivedText=="backwards"){
+      if (receivedText=="reverse"){
         reverse();
-        digitalWrite(10,HIGH);
+        Serial.println("left"); 
+        delay(1000);
+        still();
       }
-      if (receivedText=="look"){
-        digitalWrite(10,HIGH);
-        
-      }
+
       
-        
-      }
+      
       if (receivedText=="fork"){
-        myStepper.move(4324*directionFork);//in steps
+        Serial.println(myStepper.currentPosition());
+        //myStepper.moveTo(0); //go to the top to the maximum.
+        //myStepper.moveTo(4324); //go to the top to the minimum.
+        myStepper.move(1000*directionFork);//in steps |4324
         directionFork *= -1;
       
       	
       }
       receivedText = "";
+      Serial.println("reset");
     }
     else{
       receivedText += character;
