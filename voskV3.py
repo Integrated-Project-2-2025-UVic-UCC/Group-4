@@ -27,6 +27,7 @@ BLOCKSIZE = 32000  # Smaller for real-time chunks
 text = ""
 
 
+
 def estimate_noise(audio_fft, noise_fft):
     noise_magnitude = np.abs(noise_fft)
     audio_magnitude = np.abs(audio_fft)
@@ -52,9 +53,18 @@ def callback(indata, frames, time, status):
     audio_queue.put(filtered_chunk.tobytes())
 
 
-def sendMessageToArduino(command):
-    btSerial.write((command+ "\n").encode())
-    print("sent: ", command)
+def sendMessageToArduino(command, isRepeated, amountOfMessages, newWord):
+    
+    if(newWord):
+        amount = 1#amountOfMessagesSend
+        btSerial.write((command+ "\n").encode())
+        print("sent: ", command)
+    elif(amountOfMessages==0):
+        
+        amount = 1
+    elif(amountOfMessages>=1):
+        amount = 0
+    return amount
     
 
 # === Start Script ===
@@ -64,6 +74,15 @@ recognizer = KaldiRecognizer(model, 16000)
 recognizer.SetWords(False)  # Voorkomt volledige transcripties
 recognizer.SetGrammar('["left", "right", "start", "stop", "forward", "fork", "reverse", "[unk]"]')
 lastWord = ""
+
+
+amountOfMessagesSend = 0
+amountOfTimesUsed = 0
+IsRepeated = False
+NewWord = False
+AmountToAdd = 0
+PreviousLength = 1
+
 # Start audiostream
 with sd.RawInputStream(samplerate=16000, blocksize=32000, dtype='int16',
                        channels=1, callback=callback):
@@ -81,54 +100,58 @@ with sd.RawInputStream(samplerate=16000, blocksize=32000, dtype='int16',
             text = ' '.join(text.split())#spaces removed
             print(f"Herkenning: {text}")#only commands shown
             words = text.split()
-            
-
+            words.reverse()
+            amountOfTimesUsed = 0 
             if words:
-             text = words[-1]
-            #check if previous command was the same one if this one has already been send. 
-            #if the command has already been used one then skip it unless the previous command was the same.
-            #with an itteration that does +=1, check for the amount of times the command has been said and then check if that there is a new command
-            # i+=1 if new command or reset to 1;
-            #then check i amount of words from the back;
-            #if the same then do another of that command;
-            #if not the same then it is still at the same command;
+                text = words[0]
+                length = len(words)
+                if PreviousLength < length:
+                    NewWord = True
+                    AmountToAdd = -1
+                elif PreviousLength == length:
+                    NewWord = False
+                PreviousLength = length
             else:
                 text = ""
-
+            print(f"Herkenning: {words}")#only commands shown
             print("Only last word:", text)
-        print("new text:", text)
+        
         # Controleer op specifieke commando's
         if "start" in text:
             print("Commando: START gedetecteerd!")
-            sendMessageToArduino("start")
+            AmountToAdd = sendMessageToArduino("start", IsRepeated, amountOfMessagesSend, NewWord)
 
             #function()moveRobot
         if "stop"  in text:
             print("Commando: STOP gedetecteerd! Programma beëindigen...")
-            sendMessageToArduino("stop")
+            AmountToAdd = sendMessageToArduino("stop", IsRepeated, amountOfMessagesSend, NewWord)
             print("Commando: STOP gedetecteerd! Programma beëindigen...")
             #function()moveRobot
-            
         if "left"  in text:
             print("Commando: LINKS gedetecteerd!")
-            sendMessageToArduino("left")
+            AmountToAdd = sendMessageToArduino("left", IsRepeated, amountOfMessagesSend, NewWord)
             print("Commando: LINKS gedetecteerd!")
             #function()moveRobot
         if "right"  in text:
             print("Commando: RECHTS gedetecteerd!")
-            sendMessageToArduino("right")
+            AmountToAdd = sendMessageToArduino("right", IsRepeated, amountOfMessagesSend, NewWord)
             print("Commando: RECHTS gedetecteerd!")
             #function()moveRobot
         if "forward"  in text:
             print("Commando: FORWARD gedetecteerd!")
-            sendMessageToArduino("forward")
+            AmountToAdd = sendMessageToArduino("forward", IsRepeated, amountOfMessagesSend, NewWord)
             print("Commando: FORWARD gedetecteerd!")
         if "reverse"  in text:
             print("Commando: reverse gedetecteerd!")
-            sendMessageToArduino("reverse")
+            AmountToAdd = sendMessageToArduino("reverse", IsRepeated, amountOfMessagesSend, NewWord)
             print("Commando: reverse gedetecteerd!")
             #function()moveRobot
-
+        if AmountToAdd == 1:
+            amountOfMessagesSend += AmountToAdd
+        elif AmountToAdd == -1:
+            amountOfMessagesSend = 0
+            AmountToAdd == 0
             #function()moveRobot
         #while not audio_queue.empty():
         #    audio_queue.get()
+        

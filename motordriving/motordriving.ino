@@ -210,11 +210,34 @@ void loop() {
       
       
       if (receivedText=="fork"){
-        Serial.println(myStepper.currentPosition());
-        //myStepper.moveTo(0); //go to the top to the maximum.
-        //myStepper.moveTo(4324); //go to the top to the minimum.
-        myStepper.move(1000*directionFork);//in steps |4324
-        directionFork *= -1;
+        
+        if (!UpDown){
+          while(!UpDown){
+            if (myStepper.distanceToGo() == 0) {
+              Stepper.moveTo(2048); 
+              if (myStepper.currentPosition() == 2048) {
+              UpDown = true;
+              }
+            }
+            Serial.println(myStepper.currentPosition());
+            myStepper.run(); 
+          }
+        }
+        else if (UpDown){
+          while(UpDown){
+            if (myStepper.distanceToGo() == 0) {
+              Stepper.moveTo(2048); 
+              if (myStepper.currentPosition() == 0) {
+              UpDown = false;
+              }
+            }
+            Serial.println(myStepper.currentPosition());
+            myStepper.run(); 
+          }
+        }
+    
+        
+        
       
       	
       }
