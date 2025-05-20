@@ -2,8 +2,6 @@ import json
 import queue
 import sounddevice as sd
 from vosk import Model, KaldiRecognizer
-#import vosk
-from scipy.signal import butter, lfilter
 import numpy as np
 import serial
 import time
@@ -11,7 +9,7 @@ import time
 #change 'COM5' to your HC-05 port(e.g., '/dev/rfcomm0' linux maxos)
 #device manager -> ports(com&LPT) -> look for the port
 btSerial = serial.Serial('COM5', baudrate=9600)#change to COM5 or COM6 if not working
-time.sleep(2)
+time.sleep(5)
 # Pad naar het gedownloade model (pas dit aan naar jouw locatie)
 MODEL_PATH = "languages\\vosk-model-small-en-us-0.15"
 
@@ -23,7 +21,7 @@ audio_queue = queue.Queue()
 noise_fft_profile = None
 
 SAMPLERATE = 16000
-BLOCKSIZE = 32000  # Smaller for real-time chunks
+BLOCKSIZE = 16000  # Smaller for real-time chunks
 text = ""
 
 
@@ -81,10 +79,10 @@ amountOfTimesUsed = 0
 IsRepeated = False
 NewWord = False
 AmountToAdd = 0
-PreviousLength = 1
+PreviousLength = 0
 
 # Start audiostream
-with sd.RawInputStream(samplerate=16000, blocksize=32000, dtype='int16',
+with sd.RawInputStream(samplerate=16000, blocksize=16000, dtype='int16',
                        channels=1, callback=callback):
     print("Luisteren naar commando's... (Zeg 'stop' om te stoppen)")
     while True:
@@ -115,43 +113,47 @@ with sd.RawInputStream(samplerate=16000, blocksize=32000, dtype='int16',
                 text = ""
             print(f"Herkenning: {words}")#only commands shown
             print("Only last word:", text)
-        
-        # Controleer op specifieke commando's
-        if "start" in text:
-            print("Commando: START gedetecteerd!")
-            AmountToAdd = sendMessageToArduino("start", IsRepeated, amountOfMessagesSend, NewWord)
+        if(NewWord):
+            # Controleer op specifieke commando's
+            if "start" in text:
+                print("Commando: START gedetecteerd!")
+                AmountToAdd = sendMessageToArduino("start", IsRepeated, amountOfMessagesSend, NewWord)
 
-            #function()moveRobot
-        if "stop"  in text:
-            print("Commando: STOP gedetecteerd! Programma beëindigen...")
-            AmountToAdd = sendMessageToArduino("stop", IsRepeated, amountOfMessagesSend, NewWord)
-            print("Commando: STOP gedetecteerd! Programma beëindigen...")
-            #function()moveRobot
-        if "left"  in text:
-            print("Commando: LINKS gedetecteerd!")
-            AmountToAdd = sendMessageToArduino("left", IsRepeated, amountOfMessagesSend, NewWord)
-            print("Commando: LINKS gedetecteerd!")
-            #function()moveRobot
-        if "right"  in text:
-            print("Commando: RECHTS gedetecteerd!")
-            AmountToAdd = sendMessageToArduino("right", IsRepeated, amountOfMessagesSend, NewWord)
-            print("Commando: RECHTS gedetecteerd!")
-            #function()moveRobot
-        if "forward"  in text:
-            print("Commando: FORWARD gedetecteerd!")
-            AmountToAdd = sendMessageToArduino("forward", IsRepeated, amountOfMessagesSend, NewWord)
-            print("Commando: FORWARD gedetecteerd!")
-        if "reverse"  in text:
-            print("Commando: reverse gedetecteerd!")
-            AmountToAdd = sendMessageToArduino("reverse", IsRepeated, amountOfMessagesSend, NewWord)
-            print("Commando: reverse gedetecteerd!")
-            #function()moveRobot
-        if AmountToAdd == 1:
-            amountOfMessagesSend += AmountToAdd
-        elif AmountToAdd == -1:
-            amountOfMessagesSend = 0
-            AmountToAdd == 0
-            #function()moveRobot
-        #while not audio_queue.empty():
-        #    audio_queue.get()
+                #function()moveRobot
+            if "stop"  in text:
+                print("Commando: STOP gedetecteerd! Programma beëindigen...")
+                AmountToAdd = sendMessageToArduino("stop", IsRepeated, amountOfMessagesSend, NewWord)
+                print("Commando: STOP gedetecteerd! Programma beëindigen...")
+                #function()moveRobot
+            if "left"  in text:
+                print("Commando: LINKS gedetecteerd!")
+                AmountToAdd = sendMessageToArduino("left", IsRepeated, amountOfMessagesSend, NewWord)
+                print("Commando: LINKS gedetecteerd!")
+                #function()moveRobot
+            if "right"  in text:
+                print("Commando: RECHTS gedetecteerd!")
+                AmountToAdd = sendMessageToArduino("right", IsRepeated, amountOfMessagesSend, NewWord)
+                print("Commando: RECHTS gedetecteerd!")
+                #function()moveRobot
+            if "forward"  in text:
+                print("Commando: FORWARD gedetecteerd!")
+                AmountToAdd = sendMessageToArduino("forward", IsRepeated, amountOfMessagesSend, NewWord)
+                print("Commando: FORWARD gedetecteerd!")
+            if "reverse"  in text:
+                print("Commando: reverse gedetecteerd!")
+                AmountToAdd = sendMessageToArduino("reverse", IsRepeated, amountOfMessagesSend, NewWord)
+                print("Commando: reverse gedetecteerd!")
+            if "fork"  in text:
+                print("Commando: fork gedetecteerd!")
+                AmountToAdd = sendMessageToArduino("fork", IsRepeated, amountOfMessagesSend, NewWord)
+                print("Commando: fork gedetecteerd!")
+                #function()moveRobot
+            if AmountToAdd == 1:
+                amountOfMessagesSend += AmountToAdd
+            elif AmountToAdd == -1:
+                amountOfMessagesSend = 0
+                AmountToAdd == 0
+                #function()moveRobot
+            #while not audio_queue.empty():
+            #    audio_queue.get()
         

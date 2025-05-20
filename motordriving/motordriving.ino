@@ -53,6 +53,7 @@ int speedMotor = 125;
 // Pins entered in sequence IN1-IN3-IN2-IN4 for proper step sequence
 AccelStepper myStepper(MotorInterfaceType, 7, 5, 6, 4);
 int directionFork = 1;
+float UpDown = false;
 
 //Ultrasonic sensor
 #define echoPin 37 // attach pin D12 Arduino to pin Echo of HC-SR04
@@ -97,23 +98,23 @@ void right() {
   
   digitalWrite(leftMotorArray[0], HIGH); //Establishes forward direction of Channel A
   digitalWrite(leftMotorArray[1], LOW);   //Disengage the Brake for Channel A
-  analogWrite(leftMotorArray[2], 150);   //Spins the motor on Channel A at full speed
+  analogWrite(leftMotorArray[2], 200);   //Spins the motor on Channel A at full speed
 
   //Motor B backward @ half speed
   digitalWrite(rightMotorArray[0], LOW);  //Establishes backward direction of Channel B
   digitalWrite(rightMotorArray[1], LOW);   //Disengage the Brake for Channel B
-  analogWrite(rightMotorArray[2], 130);    //Spins the motor on Channel B at half speed
+  analogWrite(rightMotorArray[2], 200);    //Spins the motor on Channel B at half speed
 }
 
 void left() {
   digitalWrite(leftMotorArray[0], LOW); //Establishes forward direction of Channel A
   digitalWrite(leftMotorArray[1], LOW);   //Disengage the Brake for Channel A
-  analogWrite(leftMotorArray[2], 120);//speedMotorTurn+40);   //Spins the motor on Channel A at full speed
+  analogWrite(leftMotorArray[2], 200);//speedMotorTurn+40);   //Spins the motor on Channel A at full speed
 
   //Motor B backward @ half speed
   digitalWrite(rightMotorArray[0], HIGH);  //Establishes backward direction of Channel B
   digitalWrite(rightMotorArray[1], LOW);   //Disengage the Brake for Channel B
-  analogWrite(rightMotorArray[2], 190);//speedMotorTurn+50);    //Spins the motor on Channel B at half speed
+  analogWrite(rightMotorArray[2], 200);//speedMotorTurn+50);    //Spins the motor on Channel B at half speed
 }
 void fastleft() {
   digitalWrite(leftMotorArray[0], LOW); //Establishes forward direction of Channel A
@@ -147,16 +148,9 @@ void setup() {
     pinMode(leftMotorArray[i], OUTPUT);
     pinMode(rightMotorArray[i], OUTPUT);
   }
-  
-  forward();
-  delay(1000);
-  still();
-
-  myStepper.setMaxSpeed(1000.0);
-	myStepper.setAcceleration(50.0);
-	myStepper.setSpeed(200);
-	myStepper.moveTo(2038);
-  
+  myStepper.setMaxSpeed(400.0);       // Max safe speed
+  myStepper.setAcceleration(200.0);   // Reasonable acceleration
+  Serial.println(myStepper.currentPosition());
 
   Serial.println("vfev");
 }
@@ -164,7 +158,7 @@ void setup() {
 void loop() {
 
   if(BTSerial.available()){
-    
+    Serial.println("Start reading");
     char character = BTSerial.read();
   
     Serial.print("Final string: >");
@@ -190,13 +184,13 @@ void loop() {
       }
       if (receivedText=="right"){
         right();
-        Serial.println("left");
+        Serial.println("right");
         delay(1000);
         still();
       }
       if (receivedText=="forward"){
         forward();
-        Serial.println("left");
+        Serial.println("forward");
         delay(1000);
         still();
       }
@@ -206,15 +200,12 @@ void loop() {
         delay(1000);
         still();
       }
-
-      
-      
       if (receivedText=="fork"){
-        
+        Serial.print("Fork");
         if (!UpDown){
           while(!UpDown){
             if (myStepper.distanceToGo() == 0) {
-              Stepper.moveTo(2048); 
+              myStepper.moveTo(2048); 
               if (myStepper.currentPosition() == 2048) {
               UpDown = true;
               }
@@ -226,7 +217,7 @@ void loop() {
         else if (UpDown){
           while(UpDown){
             if (myStepper.distanceToGo() == 0) {
-              Stepper.moveTo(2048); 
+              myStepper.moveTo(0); 
               if (myStepper.currentPosition() == 0) {
               UpDown = false;
               }
