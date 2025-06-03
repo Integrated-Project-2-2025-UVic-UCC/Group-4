@@ -1,12 +1,18 @@
-# Group-4
-Software
+# Group-4 software
+
 
 ## Table of Contents
-- [Installation](#installation)
-- [Full code explaination](#FullCodeExplaination)
-- [Usage](#usage)
+- [Python](#python)
+  - [Python installation](#Python-installation)
+  - [Python full code explanation](#Python-full-code-explanation)
+  - [Python usage](#Python-usage)
+- [Arduino](#Arduino)
+  - [Arduino installation](#Arduino-installation)
+  - [Arduino full code explanation](#Arduino-full-code-explanation)
+  - [Arduino usage](#Arduino-usage)
 
-## 🧰 Installation
+## Python
+### Python installation
 
 This project relies on several Python libraries:
 
@@ -19,7 +25,7 @@ import numpy as np
 import serial
 import time
 ```
-These libraries are used for several important functions. Sounddesign is used for recording your microphone. Vosk is used for recognizing the commands. Numpy is used for changing arrays efficiently. Pyserial is used for sending the command to the Arduino. You can download all the non-standard neccessary libraries with this line of code in you command prompt, don't forget to run command prompt as administrator.
+These libraries are used for several important functions. Sounddesign is used for recording your microphone. Vosk is used for recognizing the commands. Numpy is used for changing arrays efficiently. Pyserial is used for sending the command to the Arduino. You can download all the non-standard neccessary libraries with this line of code in you command prompt, don't forget to run "command prompt" as administrator.
 
 ```cmd
 pip install sounddevice vosk scipy numpy pyserial
@@ -34,7 +40,7 @@ time.sleep(5)
 MODEL_PATH = "languages\\vosk-model-small-en-us-0.15"
 ```
 
-## Full code explaination
+### Python full code explaination
 
 Then the model path is put in to the model. For the audio a queue is started. A noise profile is made. and the sample and blocksize are made.
 ```python
@@ -191,9 +197,16 @@ if(NewWord):
                 #function()moveRobot
 ```
 
-## Usage
+### Python usage
 
 Start up the arduino. Then run the python file. Then follow the Serial instructions on the terminal of the laptop. If file doesn't run that means there is a bluetooth issue. Check if the arduino is powered and if the bluetooth module is blinking rapidly. That means it is avalable for connecting. If it is blinking slowly that means it is connected. If it doesn't blink at all then it isn't connected properly. If it is blinking rapidly and the python file has an error. Change the COM, COM5 and COM6 available.
 ```python
 btSerial = serial.Serial('COM5', baudrate=9600)#change to COM5 or COM6 if not working
 ```
+
+## Arduino
+
+### Arduino installation
+
+### Arduino full code explaination
+### Arduino usage
