@@ -47,7 +47,7 @@ int pinSpeedRight = 3;
 
 int leftMotorArray[3] = {pinMotorLeft, pinBrakeLeft, pinSpeedLeft};
 int rightMotorArray[3] = {pinMotorRight, pinBrakeRight, pinSpeedRight};
-int speedMotor = 125;
+int speedMotor = 200;
 
 // Creates an instance
 // Pins entered in sequence IN1-IN3-IN2-IN4 for proper step sequence

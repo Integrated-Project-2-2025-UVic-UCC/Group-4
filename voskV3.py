@@ -25,6 +25,13 @@ BLOCKSIZE = 16000  # Smaller for real-time chunks
 text = ""
 
 
+def record_noise_profile(seconds=3):
+    print("Recording noice profile...(be silent)")
+    noise = sd.rec(int(seconds * SAMPLERATE), samplerate=SAMPLERATE, channels=1, dtype='int16')
+    sd.wait()
+    noise = noise.flatten()
+    noise_fft = np.fft.fft(noise, n=BLOCKSIZE)
+    return noise_fft
 
 def estimate_noise(audio_fft, noise_fft):
     noise_magnitude = np.abs(noise_fft)
@@ -33,13 +40,7 @@ def estimate_noise(audio_fft, noise_fft):
     phase = np.angle(audio_fft)
     return clean_magnitude * np.exp(1j * phase)
 
-def record_noise_profile(seconds=3):
-    print("Opname van ruisprofiel...")
-    noise = sd.rec(int(seconds * SAMPLERATE), samplerate=SAMPLERATE, channels=1, dtype='int16')
-    sd.wait()
-    noise = noise.flatten()
-    noise_fft = np.fft.fft(noise, n=BLOCKSIZE)
-    return noise_fft
+
 
 def callback(indata, frames, time, status):
     if status:
@@ -84,7 +85,7 @@ PreviousLength = 0
 # Start audiostream
 with sd.RawInputStream(samplerate=16000, blocksize=16000, dtype='int16',
                        channels=1, callback=callback):
-    print("Luisteren naar commando's... (Zeg 'stop' om te stoppen)")
+    print("Listening to commands... (Say 'Stop' to stop)")
     while True:
         data = audio_queue.get()
 
