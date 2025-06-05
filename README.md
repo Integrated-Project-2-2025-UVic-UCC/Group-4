@@ -1,12 +1,18 @@
-# Group-4
-Software
+# Group-4 software
+
 
 ## Table of Contents
-- [Installation](#installation)
-- [Usage](#usage)
-- [Features](#features)
+- [Python](#python)
+  - [Python installation](#Python-installation)
+  - [Python full code explanation](#Python-full-code-explanation)
+  - [Python usage](#Python-usage)
+- [Arduino](#Arduino)
+  - [Arduino installation](#Arduino-installation)
+  - [Arduino full code explanation](#Arduino-full-code-explanation)
+  - [Arduino usage](#Arduino-usage)
 
-## 🧰 Installation
+## Python
+### Python installation
 
 This project relies on several Python libraries:
 
@@ -19,7 +25,7 @@ import numpy as np
 import serial
 import time
 ```
-These libraries are used for several important functions. Sounddesign is used for recording your microphone. Vosk is used for recognizing the commands. Numpy is used for changing arrays efficiently. Pyserial is used for sending the command to the Arduino. You can download all the non-standard neccessary libraries with this line of code in you command prompt, don't forget to run command prompt as administrator.
+These libraries are used for several important functions. Sounddesign is used for recording your microphone. Vosk is used for recognizing the commands. Numpy is used for changing arrays efficiently. Pyserial is used for sending the command to the Arduino. You can download all the non-standard neccessary libraries with this line of code in you command prompt, don't forget to run "command prompt" as administrator.
 
 ```cmd
 pip install sounddevice vosk scipy numpy pyserial
@@ -34,6 +40,8 @@ time.sleep(5)
 MODEL_PATH = "languages\\vosk-model-small-en-us-0.15"
 ```
 
+### Python full code explaination
+
 Then the model path is put in to the model. For the audio a queue is started. A noise profile is made. and the sample and blocksize are made.
 ```python
 # Laad het Vosk-model
@@ -47,3 +55,158 @@ SAMPLERATE = 16000
 BLOCKSIZE = 16000  # Smaller for real-time chunks
 text = ""
 ```
+
+For a more accurate voice recognition a noise filter function has to be implemented. How it works is it listens for 3 seconds when the program is started and then it will remember the noice so it can remove it later.
+```python
+def record_noise_profile(seconds=3):
+    print("Recording noice profile...(be silent)")
+    noise = sd.rec(int(seconds * SAMPLERATE), samplerate=SAMPLERATE, channels=1, dtype='int16')
+    sd.wait()
+    noise = noise.flatten()
+    noise_fft = np.fft.fft(noise, n=BLOCKSIZE)
+    return noise_fft
+```
+This function removes the noice from the actual commands.
+```python
+def estimate_noise(audio_fft, noise_fft):
+    noise_magnitude = np.abs(noise_fft)
+    audio_magnitude = np.abs(audio_fft)
+    clean_magnitude = np.maximum(audio_magnitude - noise_magnitude, 0)
+    phase = np.angle(audio_fft)
+    return clean_magnitude * np.exp(1j * phase)
+```
+
+THe callback gets a chunk of data from the microphone and the amount of frames and how long it took. Then it calls the previous function estimate_noise() to filter out the noice and then it returns the filtered data.
+```python
+def callback(indata, frames, time, status):
+    if status:
+        print(status)
+    chunk = np.frombuffer(indata, dtype=np.int16)
+    chunk_fft = np.fft.fft(chunk, n=BLOCKSIZE)
+    filtered_fft = estimate_noise(chunk_fft, noise_fft_profile)
+    filtered_chunk = np.fft.ifft(filtered_fft).real.astype(np.int16)
+    audio_queue.put(filtered_chunk.tobytes())
+```
+
+This function is called when it recognizes a command and in this function the command is being send to the bluetooth module connected to the arduino.
+```python
+def sendMessageToArduino(command, isRepeated, amountOfMessages, newWord):
+    
+    if(newWord):
+        amount = 1#amountOfMessagesSend
+        btSerial.write((command+ "\n").encode())
+        print("sent: ", command)
+    elif(amountOfMessages==0):
+        
+        amount = 1
+    elif(amountOfMessages>=1):
+        amount = 0
+    return amount
+```
+After all the functions are defined. First the noice function is called to get the noice profile. Then the Vosk model is made and the command list is made. and the variables are initalised.
+```python
+noise_fft_profile = record_noise_profile()
+
+recognizer = KaldiRecognizer(model, 16000)
+recognizer.SetWords(False)  # Voorkomt volledige transcripties
+recognizer.SetGrammar('["left", "right", "start", "stop", "forward", "fork", "reverse", "[unk]"]')
+lastWord = ""
+
+
+amountOfMessagesSend = 0
+amountOfTimesUsed = 0
+IsRepeated = False
+NewWord = False
+AmountToAdd = 0
+PreviousLength = 0
+```
+Then it starts the audiostream where it listens for 1 second. then it puts the audio in the queue. And gets a result from it and puts it in an array. If it is a command it will store that command otherwise  it will give an unknown in the array. Then the unkowns and the unnecessary spaces are removed. Then it will reverse it so the last heard command is in the front.
+```python
+# Start audiostream
+with sd.RawInputStream(samplerate=16000, blocksize=16000, dtype='int16',
+                       channels=1, callback=callback):
+    print("Listening to commands... (Say 'Stop' to stop)")
+    while True:
+        data = audio_queue.get()
+
+        recognizer.AcceptWaveform(data)
+        result = json.loads(recognizer.PartialResult())
+        text = result.get("partial", "")#of text = result.get("text", "").strip()
+        if text:
+            #lastWord = text.split()[-1]
+            print(f"Herkenning: {text}")#full text
+            text = text.replace("[unk]", "")#unk removed
+            text = ' '.join(text.split())#spaces removed
+            print(f"Herkenning: {text}")#only commands shown
+            words = text.split()
+            words.reverse()
+            amountOfTimesUsed = 0 
+```
+Then it needs to be checked if there is a new word in the array by checking the length of the array then it will move on. otherwise it will return to listening.
+```python
+if words:
+                text = words[0]
+                length = len(words)
+                if PreviousLength < length:
+                    NewWord = True
+                    AmountToAdd = -1
+                elif PreviousLength == length:
+                    NewWord = False
+                PreviousLength = length
+            else:
+                text = ""
+            print(f"Herkenning: {words}")#only commands shown
+            print("Only last word:", text)
+```
+Then if there is a new command in the array it will check which command it is. And call the function where it sends that command to the bluetooth module.
+```python
+if(NewWord):
+            # Controleer op specifieke commando's
+            if "start" in text:
+                print("Commando: START gedetecteerd!")
+                AmountToAdd = sendMessageToArduino("start", IsRepeated, amountOfMessagesSend, NewWord)
+
+                #function()moveRobot
+            if "stop"  in text:
+                print("Commando: STOP gedetecteerd! Programma beëindigen...")
+                AmountToAdd = sendMessageToArduino("stop", IsRepeated, amountOfMessagesSend, NewWord)
+                print("Commando: STOP gedetecteerd! Programma beëindigen...")
+                #function()moveRobot
+            if "left"  in text:
+                print("Commando: LINKS gedetecteerd!")
+                AmountToAdd = sendMessageToArduino("left", IsRepeated, amountOfMessagesSend, NewWord)
+                print("Commando: LINKS gedetecteerd!")
+                #function()moveRobot
+            if "right"  in text:
+                print("Commando: RECHTS gedetecteerd!")
+                AmountToAdd = sendMessageToArduino("right", IsRepeated, amountOfMessagesSend, NewWord)
+                print("Commando: RECHTS gedetecteerd!")
+                #function()moveRobot
+            if "forward"  in text:
+                print("Commando: FORWARD gedetecteerd!")
+                AmountToAdd = sendMessageToArduino("forward", IsRepeated, amountOfMessagesSend, NewWord)
+                print("Commando: FORWARD gedetecteerd!")
+            if "reverse"  in text:
+                print("Commando: reverse gedetecteerd!")
+                AmountToAdd = sendMessageToArduino("reverse", IsRepeated, amountOfMessagesSend, NewWord)
+                print("Commando: reverse gedetecteerd!")
+            if "fork"  in text:
+                print("Commando: fork gedetecteerd!")
+                AmountToAdd = sendMessageToArduino("fork", IsRepeated, amountOfMessagesSend, NewWord)
+                print("Commando: fork gedetecteerd!")
+                #function()moveRobot
+```
+
+### Python usage
+
+Start up the arduino. Then run the python file. Then follow the Serial instructions on the terminal of the laptop. If file doesn't run that means there is a bluetooth issue. Check if the arduino is powered and if the bluetooth module is blinking rapidly. That means it is avalable for connecting. If it is blinking slowly that means it is connected. If it doesn't blink at all then it isn't connected properly. If it is blinking rapidly and the python file has an error. Change the COM, COM5 and COM6 available.
+```python
+btSerial = serial.Serial('COM5', baudrate=9600)#change to COM5 or COM6 if not working
+```
+
+## Arduino
+
+### Arduino installation
+
+### Arduino full code explaination
+### Arduino usage
