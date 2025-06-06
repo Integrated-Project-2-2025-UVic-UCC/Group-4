@@ -208,7 +208,7 @@ btSerial = serial.Serial('COM5', baudrate=9600)#change to COM5 or COM6 if not wo
 
 ### Arduino installation
 
-For the arduino it has two libraries. In the code below there are also some commands on how the libraries are configurated.
+For the arduino it has two libraries. In the code below there are also some comments on how the libraries are configurated.
 ```cpp
 #include <SoftwareSerial.h>
 
@@ -237,9 +237,10 @@ String  receivedText = "";
 
 ```
 In the Arduino IDE there has to be only library installed, which is the AccelStepper. Go to tools>manage libraries...>Search on AccelStepper>install AccelStepper by Mike McCauley.
+After that you can upload it to the arduino.
 Then the use the interface 4 so it uses 4 wire configuration for the fork motor.
 Then the bluetooth connection module is made with the two connections for RX and TX.
-Then for the four weels the pins that are used in the motor board are shown in commands.
+Then for the four weels the pins that are used in the motor board are shown in comments.
 
 
 ### Arduino full code explaination
@@ -266,7 +267,7 @@ float UpDown = false;
 Here are all of the motors are defined.
 
 In the code below there are two functions shown one with going forward and one with standing still. These functions show how the weels are powered.
-The first one in the array sets the direction, the second one is for the brake and third and final one is for the speed.
+The first one in the array sets the direction, the second one is for the brake and third and final one is for the speed. There are other functions like left and right but those ones are the same except for a few parameters.
 ```cpp
 void forward() {
 
@@ -291,4 +292,87 @@ void still() {
   analogWrite(rightMotorArray[2], 0);    //Spins the motor on Channel B at half speed
 }
 ```
+
+In the setup the serial monitor and the bluetooth baud rate are set. Then the motor pins are set as an output. Lastly the fork speed and acceleration is defined.
+```cpp
+void setup() {
+  Serial.begin(9600); //for serial monitor
+  BTSerial.begin(9600); //hc-05 default baud rate
+
+  
+  for(int i = 0; i < 3; i++) {
+    pinMode(leftMotorArray[i], OUTPUT);
+    pinMode(rightMotorArray[i], OUTPUT);
+  }
+  myStepper.setMaxSpeed(400.0);       // Max safe speed
+  myStepper.setAcceleration(200.0);   // Reasonable acceleration
+  Serial.println(myStepper.currentPosition());
+
+  Serial.println("setup done");
+}
+```
+
+In the loop there is checked if there is a command sent. If so then there the characters are added letter for letter and when the entire command is put in the variable then it will print the final command.
+```cpp
+void loop() {
+
+  if(BTSerial.available()){
+    Serial.println("Start reading");
+    char character = BTSerial.read();
+  
+    if(character == '\n' || character == '\r'){
+      receivedText.trim();
+      Serial.print("Final string: >");
+      Serial.print(receivedText);
+      Serial.println("<");
+```
+
+Then it will compare the command to the commands in the if statemants and when it found its match then it will turn the motors accordingly for 1 second and then stop again.
+```cpp
+if (receivedText=="right"){
+        right();
+        Serial.println("right");
+        delay(1000);
+        still();
+      }
+      if (receivedText=="forward"){
+        forward();
+        Serial.println("forward");
+        delay(1000);
+        still();
+      }
+
+```
+For the fork it is different. It will first check if it is up or down. When it is the first time for the fork command it will assume it is in the down position. Then it will see "UpDown" as false. So then it will stay in while loop until it is at the Up position. In the while loop it will check if it is still and if it is then it will set the next place at 2048. If it has reached that position then it will exit the loop. If it is not yet at that place then it will keep running the fork. For going down it is the exact opposite.
+```cpp
+if (receivedText=="fork"){
+    Serial.print("Fork");
+    if (!UpDown){
+      while(!UpDown){
+        if (myStepper.distanceToGo() == 0) {
+          myStepper.moveTo(2048); 
+          if (myStepper.currentPosition() == 2048) {
+          UpDown = true;
+          }
+        }
+        Serial.println(myStepper.currentPosition());
+        myStepper.run(); 
+      }
+    }
+    else if (UpDown){
+      while(UpDown){
+        if (myStepper.distanceToGo() == 0) {
+          myStepper.moveTo(0); 
+          if (myStepper.currentPosition() == 0) {
+          UpDown = false;
+          }
+        }
+        Serial.println(myStepper.currentPosition());
+        myStepper.run(); 
+      }
+    }
+  }
+```
+And after that it will reset the command and go back to the top of the loop.
 ### Arduino usage
+To use this code to your preference, what you can do is change the speed or change the delays to move longer or shorter. 
