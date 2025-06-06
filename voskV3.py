@@ -20,7 +20,7 @@ model = Model(MODEL_PATH)
 audio_queue = queue.Queue()
 noise_fft_profile = None
 
-SAMPLERATE = 16000
+SAMPLERATE = 160004
 BLOCKSIZE = 16000  # Smaller for real-time chunks
 text = ""
 
